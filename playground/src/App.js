@@ -1,9 +1,17 @@
 import React from 'react'
-import { HelloWorld } from 'auth-component-library';
+import { Graph } from 'auth-component-library';
+import { letterFrequency } from "@visx/mock-data";
 
 const App = () => {
+  const d = JSON.stringify(letterFrequency)
   return (
-    <div>  <HelloWorld /></div>
+    <div>
+       <Graph type="BarGraph" data0={d} xAxisData={'letter'} yAxisData={'frequency'} />
+       <Graph type= "LineGraph" />
+     
+         <Graph type= "PieGraph" />
+         <Graph type="MixGraph"  />
+       </div>
   )
 }
 

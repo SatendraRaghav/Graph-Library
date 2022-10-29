@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Group } from '@visx/group';
 import { AxisLeft, AxisBottom } from '@visx/axis';
 import { Bar, Pie } from '@visx/shape';
@@ -6,11 +6,45 @@ import { scaleBand, scaleLinear, scaleOrdinal } from '@visx/scale';
 import { useTooltip, useTooltipInPortal } from '@visx/tooltip';
 import { localPoint } from '@visx/event';
 import { ParentSize } from '@visx/responsive';
-import { XYChart, AnimatedAxis, AnimatedLineSeries, Tooltip } from '@visx/xychart';
+import { XYChart, AnimatedAxis, AnimatedGrid, AnimatedLineSeries, Tooltip } from '@visx/xychart';
 import { GradientPinkBlue } from '@visx/gradient';
-import { letterFrequency } from '@visx/mock-data';
+import '@visx/mock-data';
 import { Text } from '@visx/text';
 
+function ownKeys(object, enumerableOnly) {
+  var keys = Object.keys(object);
+  if (Object.getOwnPropertySymbols) {
+    var symbols = Object.getOwnPropertySymbols(object);
+    enumerableOnly && (symbols = symbols.filter(function (sym) {
+      return Object.getOwnPropertyDescriptor(object, sym).enumerable;
+    })), keys.push.apply(keys, symbols);
+  }
+  return keys;
+}
+function _objectSpread2(target) {
+  for (var i = 1; i < arguments.length; i++) {
+    var source = null != arguments[i] ? arguments[i] : {};
+    i % 2 ? ownKeys(Object(source), !0).forEach(function (key) {
+      _defineProperty(target, key, source[key]);
+    }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)) : ownKeys(Object(source)).forEach(function (key) {
+      Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key));
+    });
+  }
+  return target;
+}
+function _defineProperty(obj, key, value) {
+  if (key in obj) {
+    Object.defineProperty(obj, key, {
+      value: value,
+      enumerable: true,
+      configurable: true,
+      writable: true
+    });
+  } else {
+    obj[key] = value;
+  }
+  return obj;
+}
 function _extends() {
   _extends = Object.assign ? Object.assign.bind() : function (target) {
     for (var i = 1; i < arguments.length; i++) {
@@ -85,13 +119,13 @@ function _nonIterableRest() {
 }
 
 var DrawBarGraph = function DrawBarGraph(_ref) {
-  var parentWidth = _ref.parentWidth,
-    data0 = _ref.data0,
+  var value = _ref.value,
+    parentWidth = _ref.parentWidth,
     parentHeight = _ref.parentHeight,
     parentLeft = _ref.parentLeft,
-    parentTop = _ref.parentTop,
-    xAxisData = _ref.xAxisData,
-    yAxisData = _ref.yAxisData;
+    parentTop = _ref.parentTop;
+  var data = value.data;
+  var arr = value.content.xAxisValue && value.content.yAxisValue ? [xAxisValue, yAxisValue] : Object.keys(data[0]);
   var _useTooltip = useTooltip(),
     tooltipData = _useTooltip.tooltipData,
     tooltipLeft = _useTooltip.tooltipLeft,
@@ -111,29 +145,27 @@ var DrawBarGraph = function DrawBarGraph(_ref) {
     showTooltip({
       tooltipLeft: coords.x,
       tooltipTop: coords.y,
-      tooltipData: datum[xAxisData] + " = " + datum[yAxisData]
+      tooltipData: datum[arr[0]] + " = " + datum[arr[1]]
     });
   };
-  var data2 = JSON.parse(data0);
-  var font = parentWidth > 240 ? parentWidth / 80 : "5px";
   var xMax = parentWidth - 5 * parentLeft;
   var yMax = parentHeight - parentTop * 2;
   var x = function x(d) {
-    return d[xAxisData];
+    return d[arr[0]];
   };
   var y = function y(d) {
-    return +d[yAxisData];
+    return +d[arr[1]];
   };
   var xScale = scaleBand({
     range: [0, xMax],
     round: true,
-    domain: data2.map(x),
+    domain: data.map(x),
     padding: 0.4
   });
   var yScale = scaleLinear({
     range: [yMax, 0],
     round: true,
-    domain: [0, Math.max.apply(Math, _toConsumableArray(data2.map(y)))]
+    domain: [0, Math.max.apply(Math, _toConsumableArray(data.map(y)))]
   });
   function compose(scale, accessor) {
     return function (data) {
@@ -144,29 +176,29 @@ var DrawBarGraph = function DrawBarGraph(_ref) {
   var yPoint = compose(yScale, y);
   return /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("svg", {
     ref: containerRef,
-    className: "BarGraphContainer",
     width: parentWidth,
     height: parentHeight
   }, /*#__PURE__*/React.createElement(Group, {
     left: 70,
-    top: -35
+    top: -30
   }, /*#__PURE__*/React.createElement(AxisLeft, {
     scale: yScale,
     top: 0,
-    label: "Spend Hours",
+    label: value.content.leftLabel,
+    labelOffset: 45,
     tickLabelProps: function tickLabelProps(e) {
       var _yScale;
       return {
-        fill: "#ff0b3b",
-        fontSize: font,
+        fill: value.style.labelStyle.labelColor,
+        fontSize: parentWidth > 450 ? parentWidth / 90 : parentWidth / 50,
         textAnchor: "end",
         x: -10,
         y: (_yScale = yScale(e)) !== null && _yScale !== void 0 ? _yScale : 0
       };
     }
-  }), data2.map(function (d, i) {
+  }), data.map(function (d, i) {
     var barHeight = yMax - yPoint(d);
-    var fillBarColor = barHeight < 40 ? "red" : "green";
+    var fillBarColor = barHeight < 25 ? value.style.barStyle.lowValueColor : barHeight > 75 ? value.style.barStyle.highValueColor : value.style.barStyle.mediumValueColor;
     return /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(Bar, {
       key: "bar-".concat(barHeight),
       x: xPoint(d),
@@ -180,14 +212,14 @@ var DrawBarGraph = function DrawBarGraph(_ref) {
       onMouseOut: hideTooltip
     }));
   }), /*#__PURE__*/React.createElement(AxisBottom, {
-    numTicks: data2.length,
+    numTicks: data.length,
     top: yMax,
     scale: xScale,
-    label: "Name of Employee",
+    label: value.content.bottomLabel,
     tickLabelProps: function tickLabelProps() {
       return {
-        fill: "blacks",
-        fontSize: font,
+        fill: value.style.labelStyle.labelColor,
+        fontSize: parentWidth > 450 ? parentWidth / 90 : parentWidth / 50,
         textAnchor: "middle"
       };
     }
@@ -196,93 +228,42 @@ var DrawBarGraph = function DrawBarGraph(_ref) {
     top: tooltipTop,
     left: tooltipLeft
   }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      backgroundColor: "black",
-      color: "white",
-      padding: "10px"
-    }
+    style: value.style.tooltipStyle
   }, tooltipData)));
 };
 
 var BarGraph = function BarGraph(_ref) {
-  var data0 = _ref.data0,
-    xAxisData = _ref.xAxisData,
-    yAxisData = _ref.yAxisData;
+  var value = _ref.value;
   var GraphRender = /*#__PURE__*/React.createElement(ParentSize, null, function (parent) {
     return /*#__PURE__*/React.createElement(DrawBarGraph, {
       parentWidth: parent.width,
-      parentHeight: 400,
+      parentHeight: value.style.containerStyle.height,
       parentTop: 20,
       parentLeft: 15,
-      data0: data0,
-      xAxisData: xAxisData,
-      yAxisData: yAxisData
-      // this is the referer to the wrapper component
-      ,
-      parentRef: parent.ref
-      // this function can be called inside MySuperCoolVisxChart to cause a resize of the wrapper component
-      ,
+      value: value,
+      parentRef: parent.ref,
       resizeParent: parent.resize
     });
   });
   return /*#__PURE__*/React.createElement("div", {
-    className: "App"
-  }, /*#__PURE__*/React.createElement("h1", {
-    style: {
-      textAlign: "center",
-      textDecoration: "underline"
-    }
-  }, "Bar graph By Visx"), GraphRender);
+    style: value.style.containerStyle
+  }, /*#__PURE__*/React.createElement("div", {
+    style: value.style.headerStyle
+  }, value.content.header), GraphRender);
 };
 
-var accessors = {
-  xAccessor: function xAccessor(d) {
-    return d.x;
-  },
-  yAccessor: function yAccessor(d) {
-    return d.y;
-  }
-};
-var Product1 = [{
-  x: "2015",
-  y: 200
-}, {
-  x: "2016",
-  y: 1200
-}, {
-  x: "2017",
-  y: 1500
-}, {
-  x: "2018",
-  y: 500
-}];
-var Product2 = [{
-  x: "2015",
-  y: 700
-}, {
-  x: "2016",
-  y: 1000
-}, {
-  x: "2017",
-  y: 450
-}, {
-  x: "2018",
-  y: 3600
-}];
-var Product3 = [{
-  x: "2015",
-  y: 200
-}, {
-  x: "2016",
-  y: 700
-}, {
-  x: "2017",
-  y: 1000
-}, {
-  x: "2018",
-  y: 500
-}];
-var DrawGraph = function DrawGraph() {
+var DrawGraph = function DrawGraph(_ref) {
+  var value = _ref.value;
+  var data = value.data;
+  var arr = value.content.xAxisValue && value.content.yAxisValue ? [xAxisValue, yAxisValue] : Object.keys(data[0][0]);
+  var accessors = {
+    xAccessor: function xAccessor(d) {
+      return d[arr[0]];
+    },
+    yAccessor: function yAccessor(d) {
+      return d[arr[1]];
+    }
+  };
   return /*#__PURE__*/React.createElement(XYChart, {
     height: 300,
     xScale: {
@@ -292,26 +273,32 @@ var DrawGraph = function DrawGraph() {
       type: "linear"
     }
   }, /*#__PURE__*/React.createElement(AnimatedAxis, {
-    orientation: "left"
+    orientation: "left",
+    label: value.content.leftLabel,
+    left: 72,
+    labelOffset: 32,
+    stroke: value.style.labelStyle.labelColor
   }), /*#__PURE__*/React.createElement(AnimatedAxis, {
-    orientation: "bottom"
-  }), /*#__PURE__*/React.createElement(AnimatedLineSeries, _extends({
-    dataKey: "Kotak Project",
-    data: Product1
-  }, accessors)), /*#__PURE__*/React.createElement(AnimatedLineSeries, _extends({
-    dataKey: "HDFC Project",
-    data: Product2
-  }, accessors)), /*#__PURE__*/React.createElement(AnimatedLineSeries, _extends({
-    dataKey: "MAMA New Project",
-    data: Product3
-  }, accessors)), /*#__PURE__*/React.createElement(Tooltip, {
+    orientation: "bottom",
+    label: value.content.bottomLabel,
+    stroke: value.style.labelStyle.labelColor
+  }), /*#__PURE__*/React.createElement(AnimatedGrid, {
+    columns: true,
+    numTicks: value.data[0].length
+  }), value.data.map(function (elem, i) {
+    return /*#__PURE__*/React.createElement(AnimatedLineSeries, _extends({
+      dataKey: value.content.tooltipDataKey[i],
+      data: elem,
+      stroke: value.style.lineStyle.colorRange[i]
+    }, accessors));
+  }), /*#__PURE__*/React.createElement(Tooltip, {
     snapTooltipToDatumX: true,
     snapTooltipToDatumY: true,
     showVerticalCrosshair: true,
     showSeriesGlyphs: true,
-    renderTooltip: function renderTooltip(_ref) {
-      var tooltipData = _ref.tooltipData,
-        colorScale = _ref.colorScale;
+    renderTooltip: function renderTooltip(_ref2) {
+      var tooltipData = _ref2.tooltipData,
+        colorScale = _ref2.colorScale;
       return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
         style: {
           color: colorScale(tooltipData.nearestDatum.key)
@@ -321,53 +308,63 @@ var DrawGraph = function DrawGraph() {
   }));
 };
 
-var LineGraph = function LineGraph() {
-  console.log("Satendra Raghav");
-  return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement(DrawGraph, null));
+var LineGraph = function LineGraph(_ref) {
+  var value = _ref.value;
+  return /*#__PURE__*/React.createElement("div", {
+    style: value.style.containerStyle
+  }, /*#__PURE__*/React.createElement("div", {
+    style: value.style.headerStyle
+  }, value.content.header), /*#__PURE__*/React.createElement(DrawGraph, {
+    value: value
+  }));
 };
 
-var letters = letterFrequency.slice(0, 3);
-var frequency = function frequency(d) {
-  return d.frequency;
-};
-var getLetterFrequencyColor = scaleOrdinal({
-  domain: letters.map(function (l) {
-    return l.letter;
-  }),
-  range: ["rgba(0,250,41,1)", "rgba(200,0,31,0.9)", "rgba(25,200,205,0.6)"]
-});
-var defaultMargin = {
-  top: 20,
-  right: 20,
-  bottom: 20,
-  left: 20
-};
 var DrawPieGraph = function DrawPieGraph(_ref) {
-  var parentWidth = _ref.parentWidth,
+  var value = _ref.value,
+    parentWidth = _ref.parentWidth,
     parentHeight = _ref.parentHeight;
-    _ref.parentLeft;
-    _ref.parentTop;
-  var _useState = useState(false),
-    _useState2 = _slicedToArray(_useState, 2),
-    hover = _useState2[0],
-    setHover = _useState2[1];
-  var innerWidth = parentWidth - defaultMargin.left - defaultMargin.right;
-  var innerHeight = parentHeight - defaultMargin.top - defaultMargin.bottom;
-  var radius = Math.min(innerHeight, innerHeight) / 2;
+  var letters = value.data;
+  var arr = value.content.xAxisValue && value.content.yAxisValue ? [xAxisValue, yAxisValue] : Object.keys(letters[0]);
+  var frequency = function frequency(d) {
+    return d[arr[1]];
+  };
+  var getLetterFrequencyColor = scaleOrdinal({
+    domain: letters.map(function (l) {
+      return l[arr[0]];
+    }),
+    range: value.style.pieStyle.colorRange
+  });
+  var _useTooltip = useTooltip(),
+    tooltipData = _useTooltip.tooltipData,
+    tooltipLeft = _useTooltip.tooltipLeft,
+    tooltipTop = _useTooltip.tooltipTop,
+    tooltipOpen = _useTooltip.tooltipOpen,
+    showTooltip = _useTooltip.showTooltip,
+    hideTooltip = _useTooltip.hideTooltip;
+  var _useTooltipInPortal = useTooltipInPortal({
+      detectBounds: true,
+      scroll: true
+    }),
+    TooltipInPortal = _useTooltipInPortal.TooltipInPortal;
+  var handleMouse = function handleMouse(event, datum) {
+    var coords = localPoint(event.target.ownerSVGElement, event);
+    showTooltip({
+      tooltipLeft: coords.x,
+      tooltipTop: coords.y,
+      tooltipData: datum[arr[0]] + " = " + datum[arr[1]]
+    });
+  };
+  var innerWidth = parentWidth - 40;
+  var innerHeight = parentHeight - 40;
+  var radius = Math.min(innerWidth, innerHeight) / 2;
   var centerX = innerWidth / 2;
   var centerY = innerHeight / 2;
-  var left = centerX + defaultMargin.left;
-  var top = centerY + defaultMargin.top;
+  var left = centerX + 20;
+  var top = centerY + 20;
   var pieSortValues = function pieSortValues(a, b) {
     return a - b;
   };
-  var mouseOverHandler = function mouseOverHandler(arc) {
-    setHover(true);
-  };
-  var mouseOutHandler = function mouseOutHandler(arc) {
-    setHover(false);
-  };
-  return /*#__PURE__*/React.createElement("svg", {
+  return /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("svg", {
     width: parentWidth,
     height: parentHeight,
     className: "pieGraphContainer"
@@ -380,29 +377,24 @@ var DrawPieGraph = function DrawPieGraph(_ref) {
     data: letters,
     pieSortValues: pieSortValues,
     pieValue: frequency,
-    outerRadius: radius,
-    innerRadius: radius - 50,
-    cornerRadius: 6,
-    padAngle: 0.005
+    outerRadius: radius - value.style.pieStyle.outerRadius,
+    innerRadius: radius - value.style.pieStyle.innerRadius,
+    cornerRadius: value.style.pieStyle.cornerRadius,
+    padAngle: value.style.pieStyle.padAngle
   }, function (pie) {
     return pie.arcs.map(function (arc, index) {
-      console.log(arc);
-      var letter = arc.data.letter;
+      var letter = arc.data[arr[0]][0];
       var _pie$path$centroid = pie.path.centroid(arc),
         _pie$path$centroid2 = _slicedToArray(_pie$path$centroid, 2),
         centriodX = _pie$path$centroid2[0],
         centriodY = _pie$path$centroid2[1];
-      // const hasSpaceForLabel = arc.endAngle - arc.startAngle >= 0.5;
       var arcPath = pie.path(arc);
       var arcFill = getLetterFrequencyColor(letter);
-      var value = arc.value;
       return /*#__PURE__*/React.createElement("g", {
         key: "arc-".concat(letter, "-").concat(index),
-        onMouseOut: function onMouseOut() {
-          return mouseOutHandler();
-        },
-        onMouseOver: function onMouseOver() {
-          return mouseOverHandler();
+        onMouseOut: hideTooltip,
+        onMouseOver: function onMouseOver(e) {
+          return handleMouse(e, arc.data);
         },
         className: "pieTooltipHolder"
       }, /*#__PURE__*/React.createElement("path", {
@@ -413,81 +405,67 @@ var DrawPieGraph = function DrawPieGraph(_ref) {
         y: centriodY,
         dy: "0.33em",
         fontSize: 14,
-        fill: "rgba(250,250,250,0.9)",
+        fill: value.style.labelStyle.labelColor,
         textAnchor: "middle",
         pointerEvents: "none"
-      }, letter), hover && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(Text, {
-        x: centriodX + 1,
-        y: centriodY + 15,
-        dy: "0.33em",
-        fontSize: 14,
-        fill: "yellow",
-        textAnchor: "middle",
-        pointerEvents: "none"
-      }, value.toFixed(2))));
+      }, letter));
     });
-  })));
+  }))), tooltipOpen && /*#__PURE__*/React.createElement(TooltipInPortal, {
+    key: Math.random(),
+    top: tooltipTop + 290,
+    left: tooltipLeft - 90
+  }, /*#__PURE__*/React.createElement("div", {
+    style: value.style.tooltipStyle
+  }, tooltipData)));
 };
 
-var PieRender = /*#__PURE__*/React.createElement(ParentSize, null, function (parent) {
-  return /*#__PURE__*/React.createElement(DrawPieGraph, {
-    parentWidth: parent.width,
-    parentHeight: 200,
-    parentTop: 15,
-    parentLeft: 15
-    // this is the referer to the wrapper component
-    ,
-    parentRef: parent.ref
-    // this function can be called inside MySuperCoolVisxChart to cause a resize of the wrapper component
-    ,
-    resizeParent: parent.resize
+var PieGraph = function PieGraph(_ref) {
+  var value = _ref.value;
+  var PieRender = /*#__PURE__*/React.createElement(ParentSize, null, function (parent) {
+    return /*#__PURE__*/React.createElement(DrawPieGraph, {
+      parentWidth: parent.width,
+      parentHeight: value.style.containerStyle.height,
+      parentRef: parent.ref,
+      resizeParent: parent.resize,
+      value: value
+    });
   });
-});
-var PieGraph = function PieGraph() {
-  return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h1", {
-    style: {
-      textAlign: "center",
-      textDecoration: "underline"
-    }
-  }, "Pie Chart By Visx"), PieRender);
+  return /*#__PURE__*/React.createElement("div", {
+    style: value.style.containerStyle
+  }, /*#__PURE__*/React.createElement("div", {
+    style: value.style.headerStyle
+  }, value.content.header), PieRender);
 };
 
 var NewBarLineGraph = function NewBarLineGraph(_ref) {
-  var parentWidth = _ref.parentWidth,
+  var value = _ref.value,
+    parentWidth = _ref.parentWidth,
     parentHeight = _ref.parentHeight,
     parentLeft = _ref.parentLeft,
     parentTop = _ref.parentTop;
-  var _useTooltip = useTooltip();
-    _useTooltip.showTooltip;
-    _useTooltip.hideTooltip;
+  var data = value.data;
+  var arr = value.content.xAxisValue && value.content.yAxisValue ? [xAxisValue, yAxisValue] : Object.keys(data[0]);
+  var accessors = {
+    xAccessor: function xAccessor(d) {
+      return d[arr[0]];
+    },
+    yAccessor: function yAccessor(d) {
+      return d[arr[1]];
+    }
+  };
   var _useTooltipInPortal = useTooltipInPortal({
       detectBounds: true,
       scroll: true
     }),
     containerRef = _useTooltipInPortal.containerRef;
-  var data = letterFrequency.slice(0, 26);
-  var data2 = letterFrequency.map(function (elem) {
-    return {
-      x: elem.letter,
-      y: elem.frequency * 100
-    };
-  });
-  var accessors = {
-    xAccessor: function xAccessor(d) {
-      return d.x;
-    },
-    yAccessor: function yAccessor(d) {
-      return d.y;
-    }
-  };
   var font = parentWidth > 240 ? parentWidth / 80 : "5px";
   var xMax = parentWidth - 5 * parentLeft;
   var yMax = parentHeight - parentTop * 2;
   var x = function x(d) {
-    return d.letter;
+    return d[arr[0]];
   };
   var y = function y(d) {
-    return +d.frequency * 100;
+    return +d[arr[1]];
   };
   var xScale = scaleBand({
     range: [0, xMax],
@@ -507,11 +485,11 @@ var NewBarLineGraph = function NewBarLineGraph(_ref) {
   }
   var xPoint = compose(xScale, x);
   var yPoint = compose(yScale, y);
-  return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+  return /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
     style: {
       position: "absolute",
       top: 0,
-      left: 0,
+      left: 20,
       zIndex: 2
     }
   }, /*#__PURE__*/React.createElement(XYChart, {
@@ -524,9 +502,9 @@ var NewBarLineGraph = function NewBarLineGraph(_ref) {
       type: "linear"
     }
   }, /*#__PURE__*/React.createElement(AnimatedLineSeries, _extends({
-    dataKey: "MAMA New Project",
-    data: data2,
-    stroke: "tomato"
+    dataKey: value.content.tooltipDataKey[0],
+    data: data,
+    stroke: value.style.lineStyle.colorRange[0]
   }, accessors)), /*#__PURE__*/React.createElement(Tooltip, {
     snapTooltipToDatumX: true,
     snapTooltipToDatumY: true,
@@ -551,17 +529,16 @@ var NewBarLineGraph = function NewBarLineGraph(_ref) {
     width: parentWidth,
     height: parentHeight
   }, /*#__PURE__*/React.createElement(Group, {
-    left: 40,
+    left: 60,
     top: -20
   }, /*#__PURE__*/React.createElement(AxisLeft, {
     scale: yScale,
-    numTicks: 10,
     top: 0,
-    label: "Spend Hours",
+    label: value.content.leftLabel,
     tickLabelProps: function tickLabelProps(e) {
       var _yScale;
       return {
-        fill: "#ff0b3b",
+        fill: value.style.labelStyle.labelColor,
         fontSize: font,
         textAnchor: "end",
         x: -10,
@@ -570,7 +547,7 @@ var NewBarLineGraph = function NewBarLineGraph(_ref) {
     }
   }), data.map(function (d, i) {
     var barHeight = yMax - yPoint(d);
-    var fillBarColor = barHeight < 40 ? "red" : barHeight > 100 ? "green" : "royalblue";
+    var fillBarColor = barHeight < 25 ? value.style.barStyle.lowValueColor : barHeight > 75 ? value.style.barStyle.highValueColor : value.style.barStyle.mediumValueColor;
     return /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement(Bar, {
       key: "bar-".concat(barHeight),
       x: d === 1 ? 40 : xPoint(d),
@@ -590,10 +567,10 @@ var NewBarLineGraph = function NewBarLineGraph(_ref) {
     numTicks: data.length,
     top: yMax,
     scale: xScale,
-    label: "Name of Employee",
+    label: value.content.bottomLabel,
     tickLabelProps: function tickLabelProps() {
       return {
-        fill: "#ff0b3b",
+        fill: value.style.labelStyle.labelColor,
         fontSize: font,
         textAnchor: "middle"
       };
@@ -601,42 +578,36 @@ var NewBarLineGraph = function NewBarLineGraph(_ref) {
   }))));
 };
 
-var MixGraph = function MixGraph() {
-  var _useState = useState(),
-    _useState2 = _slicedToArray(_useState, 2);
-    _useState2[0];
-    _useState2[1];
+var MixGraph = function MixGraph(_ref) {
+  var value = _ref.value;
   var MixBarGraphRender = /*#__PURE__*/React.createElement(ParentSize, null, function (parent) {
     return /*#__PURE__*/React.createElement("div", {
-      className: "MixgraphContaine"
+      style: {
+        position: "relative"
+      }
     }, /*#__PURE__*/React.createElement(NewBarLineGraph, {
       parentWidth: parent.width,
-      parentHeight: 400,
+      parentHeight: parent.height,
       parentTop: 15,
       parentLeft: 15,
       parentRef: parent.ref,
-      resizeParent: parent.resize
+      resizeParent: parent.resize,
+      value: value
     }));
   });
-  return /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
-    style: {}
-  }, /*#__PURE__*/React.createElement("h1", {
-    style: {
-      textAlign: "center",
-      textDecoration: "underline"
-    }
-  }, "Mix Line-Bar graph By Visx"), /*#__PURE__*/React.createElement("div", {
-    style: {
-      position: "relative"
-    }
+  return /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
+    style: _objectSpread2(_objectSpread2({}, value.style.headerStyle), {}, {
+      background: value.style.containerStyle.background,
+      width: value.style.containerStyle.width
+    })
+  }, value.content.header), /*#__PURE__*/React.createElement("div", {
+    style: _objectSpread2({}, value.style.containerStyle)
   }, MixBarGraphRender)));
 };
 
 var Graph = function Graph(_ref) {
-  var type = _ref.type,
-    data0 = _ref.data0,
-    xAxisData = _ref.xAxisData,
-    yAxisData = _ref.yAxisData;
+  var value = _ref.value;
+  var valueObj = JSON.parse(value);
   return /*#__PURE__*/React.createElement("div", {
     style: {
       fontFamily: "sans-serif",
@@ -644,37 +615,25 @@ var Graph = function Graph(_ref) {
       boxSizing: "border-box"
     }
   }, function () {
-    switch (type) {
-      case "BarGraph":
+    switch (valueObj.type) {
+      case "Bargraph":
         return /*#__PURE__*/React.createElement(BarGraph, {
-          data0: data0,
-          xAxisData: xAxisData,
-          yAxisData: yAxisData
+          value: valueObj
         });
-      case "LineGraph":
+      case "Linegraph":
         return /*#__PURE__*/React.createElement(LineGraph, {
-          data0: data0,
-          xAxisData: xAxisData,
-          yAxisData: yAxisData
+          value: valueObj
         });
-      case "PieGraph":
+      case "Piegraph":
         return /*#__PURE__*/React.createElement(PieGraph, {
-          data0: data0
+          value: valueObj
         });
-      case "MixGraph":
+      case "Mixgraph":
         return /*#__PURE__*/React.createElement(MixGraph, {
-          data0: data0,
-          xAxisData: xAxisData,
-          yAxisData: yAxisData
+          value: valueObj
         });
       default:
-        return /*#__PURE__*/React.createElement("div", {
-          style: {
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center"
-          }
-        }, /*#__PURE__*/React.createElement("h1", null, "Please select type of graph"));
+        return " ";
     }
   }());
 };

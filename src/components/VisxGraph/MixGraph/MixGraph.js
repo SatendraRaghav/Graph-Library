@@ -1,22 +1,20 @@
-import React, { useState } from "react";
-import DrawBarGraph from '../BarGraph/DrawBarGraph'
+import React from "react";
 import { ParentSize } from "@visx/responsive";
-import DrawMixGraph from "./DrawMixGraph";
 import NewBarLineGraph from "./NewBarLineGraph";
 
-const MixGraph = () => {
-  const [width, setWidth] = useState();
+const MixGraph = ({value}) => {
   let MixBarGraphRender = (
     <ParentSize>
       {(parent) => (
-        <div className="MixgraphContaine">
+        <div style={{position:"relative"}}>
         <NewBarLineGraph
           parentWidth={parent.width}
-          parentHeight={400}
+          parentHeight={parent.height}
           parentTop={15}
           parentLeft={15}
           parentRef={parent.ref}
           resizeParent={parent.resize}
+          value={value}
         />
         </div>
       )}
@@ -26,13 +24,12 @@ const MixGraph = () => {
 
   return (
     <>
-   
-    <div style={{}}>
-       <h1 style={{textAlign:"center",textDecoration:"underline"}}>Mix Line-Bar graph By Visx</h1>
-      <div style={{position:"relative"}}>{MixBarGraphRender}</div>
-    
+   <div>
+   <div style={{...value.style.headerStyle,background:value.style.containerStyle.background,width:value.style.containerStyle.width}}>{value.content.header}</div>
+    <div style={{...value.style.containerStyle}} > 
+       {MixBarGraphRender}
     </div>
-   
+   </div>
     </>
   );
 };

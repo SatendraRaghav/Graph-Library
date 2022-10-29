@@ -6,7 +6,10 @@ import { scaleLinear, scaleBand } from "@visx/scale";
 import { useTooltip, useTooltipInPortal } from "@visx/tooltip";
 import { localPoint } from "@visx/event";
 
-const DrawBarGraph = ({ parentWidth, data0, parentHeight, parentLeft, parentTop, xAxisData, yAxisData }) => {
+
+const DrawBarGraph = ({ value, parentWidth, parentHeight, parentLeft, parentTop }) => {
+  const data = value.data;
+  const arr = (value.content.xAxisValue && value.content.yAxisValue) ? [xAxisValue, yAxisValue] : Object.keys(data[0]);
   const {
     tooltipData,
     tooltipLeft,
@@ -25,27 +28,26 @@ const DrawBarGraph = ({ parentWidth, data0, parentHeight, parentLeft, parentTop,
     showTooltip({
       tooltipLeft: coords.x,
       tooltipTop: coords.y,
-      tooltipData: datum[xAxisData] + " = " + datum[yAxisData]
+      tooltipData: datum[arr[0]] + " = " + datum[arr[1]]
     });
   };
 
-  const data2 = JSON.parse(data0)
-  const font = parentWidth > 240 ? parentWidth / 80 : "5px";
+
   const xMax = parentWidth - 5 * parentLeft;
   const yMax = parentHeight - parentTop * 2;
-  const x = (d) => d[xAxisData];
-  const y = (d) => +d[yAxisData];
+  const x = (d) => d[arr[0]];
+  const y = (d) => +d[arr[1]];
   const xScale = scaleBand({
     range: [0, xMax],
     round: true,
-    domain: data2.map(x),
+    domain: data.map(x),
     padding: 0.4
   });
 
   const yScale = scaleLinear({
     range: [yMax, 0],
     round: true,
-    domain: [0, Math.max(...data2.map(y))]
+    domain: [0, Math.max(...data.map(y))]
   });
   function compose(scale, accessor) {
     return (data) => scale(accessor(data));
@@ -57,27 +59,26 @@ const DrawBarGraph = ({ parentWidth, data0, parentHeight, parentLeft, parentTop,
     <>
       <svg
         ref={containerRef}
-        className="BarGraphContainer"
         width={parentWidth}
         height={parentHeight}
       >
-        <Group left={70} top={-35}>
+        <Group left={70} top={-30} >
           <AxisLeft
             scale={yScale}
             top={0}
-            label="Spend Hours"
+            label={value.content.leftLabel}
+            labelOffset={45}
             tickLabelProps={(e) => ({
-              fill: "#ff0b3b",
-              fontSize: font,
+              fill: value.style.labelStyle.labelColor,
+              fontSize: parentWidth > 450 ? parentWidth / 90 : parentWidth / 50,
               textAnchor: "end",
               x: -10,
               y: yScale(e) ?? 0
             })}
           />
-          {data2.map((d, i) => {
+          {data.map((d, i) => {
             const barHeight = yMax - yPoint(d);
-            const fillBarColor =
-              barHeight < 40 ? "red" : "green";
+            const fillBarColor = barHeight < 25 ? value.style.barStyle.lowValueColor : (barHeight > 75 ? value.style.barStyle.highValueColor : value.style.barStyle.mediumValueColor);
             return (
               <>
                 <Bar
@@ -95,13 +96,13 @@ const DrawBarGraph = ({ parentWidth, data0, parentHeight, parentLeft, parentTop,
           })}
 
           <AxisBottom
-            numTicks={data2.length}
+            numTicks={data.length}
             top={yMax}
             scale={xScale}
-            label="Name of Employee"
+            label={value.content.bottomLabel}
             tickLabelProps={() => ({
-              fill: "blacks",
-              fontSize: font,
+              fill: value.style.labelStyle.labelColor,
+              fontSize: parentWidth > 450 ? parentWidth / 90 : parentWidth / 50,
               textAnchor: "middle"
             })}
           />
@@ -113,7 +114,7 @@ const DrawBarGraph = ({ parentWidth, data0, parentHeight, parentLeft, parentTop,
           top={tooltipTop}
           left={tooltipLeft}
         >
-         <div style={{backgroundColor:"black",color:"white",padding:"10px"}}>{tooltipData}</div> 
+          <div style={value.style.tooltipStyle}>{tooltipData}</div>
         </TooltipInPortal>
       )}
     </>

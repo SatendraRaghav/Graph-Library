@@ -3,49 +3,31 @@ import {
   AnimatedAxis,
   AnimatedLineSeries,
   XYChart,
-  Tooltip
+  Tooltip,
+  AnimatedGrid
 } from "@visx/xychart";
 
-const accessors = { xAccessor: (d) => d.x, yAccessor: (d) => d.y };
-const Product1 = [
-  { x: "2015", y: 200 },
-  { x: "2016", y: 1200 },
-  { x: "2017", y: 1500 },
-  { x: "2018", y: 500 }
-];
-const Product2 = [
-  { x: "2015", y: 700 },
-  { x: "2016", y: 1000 },
-  { x: "2017", y: 450 },
-  { x: "2018", y: 3600 }
-];
-const Product3 = [
-  { x: "2015", y: 200 },
-  { x: "2016", y: 700 },
-  { x: "2017", y: 1000 },
-  { x: "2018", y: 500 }
-];
-const DrawGraph = () => {
+const DrawGraph = ({ value }) => {
+  const data = value.data;
+  const arr = (value.content.xAxisValue && value.content.yAxisValue) ? [xAxisValue, yAxisValue] : Object.keys(data[0][0]);
+
+  const accessors = { xAccessor: (d) => d[arr[0]], yAccessor: (d) => d[arr[1]] };
   return (
     <XYChart height={300} xScale={{ type: "band" }} yScale={{ type: "linear" }}>
-      <AnimatedAxis orientation="left" />
-      <AnimatedAxis orientation="bottom" />
-      {/* <AnimatedGrid columns={true} numTicks={6} /> */}
-      <AnimatedLineSeries
-        dataKey="Kotak Project"
-        data={Product1}
-        {...accessors}
-      />
-      <AnimatedLineSeries
-        dataKey="HDFC Project"
-        data={Product2}
-        {...accessors}
-      />
-      <AnimatedLineSeries
-        dataKey="MAMA New Project"
-        data={Product3}
-        {...accessors}
-      />
+      <AnimatedAxis orientation="left" label={value.content.leftLabel} left={72} labelOffset={32} stroke={value.style.labelStyle.labelColor} />
+      <AnimatedAxis orientation="bottom" label={value.content.bottomLabel} stroke={value.style.labelStyle.labelColor} />
+      <AnimatedGrid columns={true} numTicks={value.data[0].length} />
+      {
+        value.data.map((elem, i) => {
+          return (
+            <AnimatedLineSeries
+              dataKey={value.content.tooltipDataKey[i]}
+              data={elem}
+              stroke={value.style.lineStyle.colorRange[i]}
+              {...accessors}
+            />)
+        })
+      }
 
       <Tooltip
         snapTooltipToDatumX

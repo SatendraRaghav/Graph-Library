@@ -1,12 +1,13 @@
 import React from "react";
 import DrawLineGraph from "./DrawLineGraph";
 
-const LineGraph = () => {
-  console.log("Satendra Raghav")
+const LineGraph = ({value}) => {
   return (
-    <div>
-     
-      <DrawLineGraph />
+    <div style={value.style.containerStyle}>
+     <div style={value.style.headerStyle}>{value.content.header}</div>
+      <DrawLineGraph
+       value={value}
+      />
     </div>
   );
 };

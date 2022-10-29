@@ -2,31 +2,27 @@ import React from "react";
 import DrawBarGraph from "./DrawBarGraph";
 import { ParentSize } from "@visx/responsive";
 
+const BarGraph = ({ value }) => {
 
-const BarGraph = ({data0,xAxisData,yAxisData}) => {
   let GraphRender = (
     <ParentSize>
       {(parent) => (
         <DrawBarGraph
           parentWidth={parent.width}
-          parentHeight={400}
+          parentHeight={value.style.containerStyle.height}
           parentTop={20}
           parentLeft={15}
-          data0={data0}
-          xAxisData={xAxisData}
-          yAxisData={yAxisData}
-          // this is the referer to the wrapper component
+          value={value}
           parentRef={parent.ref}
-          // this function can be called inside MySuperCoolVisxChart to cause a resize of the wrapper component
           resizeParent={parent.resize}
         />
       )}
     </ParentSize>
   );
 
-  return <div className="App">
-    <h1 style={{textAlign:"center",textDecoration:"underline"}}>Bar graph By Visx</h1>
+  return <div style={value.style.containerStyle}>
+    <div style={value.style.headerStyle}>{value.content.header}</div>
     {GraphRender}
-    </div>;
+  </div>;
 };
 export default BarGraph;
